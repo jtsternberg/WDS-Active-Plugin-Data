@@ -134,17 +134,61 @@ class WDS_Active_Plugin_Data {
 	public function display_plugin_data() { ?>
 		<div class="wrap">
 		<h1><?php _e( 'WDS Active Plugin Data', 'wds-apd' ); ?></h1>
+
+		<p>
+			<a class="wds-sites-list wds-toggle-active" href="#"><?php _e( 'Toggle Sites List', 'wds-apd' ); ?></a> |
+			<a class="wds-simple" href="#"><?php _e( 'Toggle Simple', 'wds-apd' ); ?></a> |
+			<a class="wds-advanced" href="#"><?php _e( 'Toggle Advanced', 'wds-apd' ); ?></a>
+		</p>
+
 		<?php
-
-		$this->get_toggle_links();
-
-		$this->get_simple_list();
-
-		$this->get_advanced_list();
-
 		$this->get_sites_list();
-
+		$this->get_simple_list();
+		$this->get_advanced_list();
 		?>
+
+		</div>
+		<?php
+	}
+
+	/**
+	 * Output the sites list
+	 *
+	 * @since 1.0.0
+	 */
+	public function get_sites_list() {
+		$sites = $this->get_sites();
+		?>
+		<div id="wds-sites-list">
+		<h2><?php _e( 'Sites List', 'wds-apd' ); ?></h2>
+		<table>
+			<tr>
+				<td><strong><?php _e( 'Plugin Name / Site ID', 'wds-apd' ); ?></strong></td>
+				<?php
+					foreach( $sites as $site ) {
+						echo '<td title="' . esc_attr( $site['domain'] ) . '">' . $site['blog_id'] . '</td>';
+					}
+				?>
+			</tr>
+
+			<?php
+				$index = 0;
+				foreach( $this->get_available_plugins() as $plugin_file => $plugin_data ) {
+					echo '<tr><td>' . $plugin_data['Name'] . '</td>';
+
+					$index = 0;
+					foreach ( $this->get_all_sites_active_plugins() as $site => $plugins ) {
+
+						echo '<td title="' . esc_attr( $sites[ $index ]['domain'] ) . '">
+							<a href="'. esc_url( get_admin_url( $sites[ $index ]['blog_id'] ) ) .'" class="dashicons ' . ( in_array( $plugin_file, (array) $plugins ) ? 'dashicons-yes wds-green' : 'dashicons-no-alt wds-red' ) . '"></a>
+						</td>';
+
+						$index++;
+					}
+					echo '</tr>';
+				}
+			?>
+		</table>
 		</div>
 		<?php
 	}
@@ -155,7 +199,7 @@ class WDS_Active_Plugin_Data {
 	 * @since 1.0.0
 	 */
 	public function get_simple_list() { ?>
-		<div id="wds-simple">
+		<div id="wds-simple" class="wds-display-none">
 			<h2><?php _e( 'Simple', 'wds-apd' ); ?></h2>
 			<?php
 			$this->get_clear_transients_link();
@@ -186,7 +230,7 @@ class WDS_Active_Plugin_Data {
 		<div id="wds-advanced" class="wds-display-none">
 			<h2><?php _e( 'Advanced', 'wds-apd' ); ?></h2>
 
-			<?php 		$this->get_clear_transients_link(); ?>
+			<?php $this->get_clear_transients_link(); ?>
 
 			<table class="wp-list-table widefat plugins striped">
 				<tr>
@@ -209,99 +253,29 @@ class WDS_Active_Plugin_Data {
 	<?php
 	}
 
-	/**
-	 * Determines if a plugin is active on any site in the network
-	 *
-	 * @param $plugin_file (string) plugin to check
-	 *
-	 * @return bool
-	 */
-	public function is_plugin_active_on_any_site( $plugin_file ) {
-
-		$active = false;
-
-		foreach( $this->get_all_sites_active_plugins() as $plugins ) {
-
-			if ( in_array( $plugin_file, $plugins ) ) {
-
-				$active = true;
-			}
-		}
-
-		return $active;
-
-	}
-
-	/**
-	 * Output the sites list
-	 *
-	 * @since 1.0.0
-	 */
-	public function get_sites_list() {
-		$sites = $this->get_sites();
-		?>
-		<div id="wds-sites-list" class="wds-display-none">
-		<h2><?php _e( 'Sites List', 'wds-apd' ); ?></h2>
-		<table class="wp-list-table striped">
-
-			<?php 		$this->get_clear_transients_link(); ?>
-
-			<tr>
-				<td><strong><?php _e( 'Plugin Name / Site ID', 'wds-apd' ); ?></strong></td>
-				<?php
-					foreach( $sites as $site ) {
-						echo '<td title="' . esc_attr( $site->domain ) . '"><a href="'.get_admin_url( $site->blog_id ).'plugins.php">' . $site->blog_id . '</a></td>';
-					}
-				?>
-			</tr>
-
-			<?php
-				$index = 0;
-				foreach( $this->get_available_plugins() as $plugin_file => $plugin_data ) {
-					echo '<tr><td>' . $plugin_data['Name'] . '</td>';
-
-					$index = 0;
-
-					foreach ( $this->get_all_sites_active_plugins() as $site => $plugins ) {
-
-						if ( in_array( $plugin_file, (array) $plugins ) ) {
-
-							$span = '<span class="dashicons dashicons-yes wds-green"></span>';
-
-						} elseif ( is_plugin_active_for_network( $plugin_file ) ) {
-
-							$span = '<span class="dashicons dashicons-yes wds-lt-green"></span>';
-
-						} else {
-
-							$span = '<span class="dashicons dashicons-no-alt wds-red"></span>';
-
-						}
-
-						echo '<td title="' . esc_attr( $sites[ $index ]->domain ) . '">';
-						echo $span;
-						echo '</td>';
-
-						$index++;
-					}
-					echo '</tr>';
-				}
-			?>
-		</table>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Display out toggle links
-	 *
-	 * @since 1.0.0
-	 */
-	public function get_toggle_links() { ?>
-		<p><a class="wds-simple" href="#"><?php _e( 'Toggle Simple', 'wds-apd' ); ?></a> | <a class="wds-advanced" href="#"><?php _e( 'Toggle Advanced', 'wds-apd' ); ?></a> | <a class="wds-sites-list" href="#"><?php _e( 'Toggle Sites List', 'wds-apd' ); ?></a></p>
-
-	<?php
-	}
+        /**
+         * Determines if a plugin is active on any site in the network
+         *
+         * @param $plugin_file (string) plugin to check
+         *
+         * @return bool
+         */
+        public function is_plugin_active_on_any_site( $plugin_file ) {
+            
+            $active = false;
+            
+            foreach( $this->get_all_sites_active_plugins() as $plugins ) {
+                
+                if ( in_array( $plugin_file, $plugins ) ) {
+                    
+                    $active = true;
+                }
+            }
+            
+            return $active;
+            
+        }
+        
 
 	public function get_clear_transients_link() {
 		?>
@@ -318,19 +292,15 @@ class WDS_Active_Plugin_Data {
 		?>
 		<script>
 			(function($) {
-				$('.wds-advanced,.wds-simple,.wds-sites-list').on( 'click', function(e){
+				var $links = $('.wds-advanced,.wds-simple,.wds-sites-list');
+				var $sections = $('#wds-advanced,#wds-simple,#wds-sites-list');
+				$links.on( 'click', function(e){
 					e.preventDefault();
-					var links = ['wds-advanced','wds-simple','wds-sites-list'];
-					var $show = $(this).attr('class');
-					var $display = $('#'+$show);
 
-					$(links).each(function(i,att){
-						if ( att == $show && $display.hasClass('wds-display-none') ) {
-							$display.removeClass('wds-display-none');
-						} else {
-							$('#'+att).addClass('wds-display-none');
-						}
-					});
+					$sections.addClass('wds-display-none');
+					$links.removeClass('wds-toggle-active');
+					$('#'+ $(this).attr('class') ).removeClass('wds-display-none');
+					$(this).addClass('wds-toggle-active');
 				});
 			})(jQuery);
 		</script>
